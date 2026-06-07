@@ -125,13 +125,23 @@ class LaunchGameHandler: ObservableObject {
             let thermalStability = nativeSettings.setting(forKey: "THERMAL_STABILITY_PROFILE", default: true).value
             config.normalizeForLaunch(thermalStability: thermalStability)
         }
-        config.gamepath = currentGame.fileURL.path
+        if currentGame.isSystemApplet {
+            config.ignoreMissingServices = true
+            config.disablePTC = true
+            config.resscale = 1.0
+        }
+        if currentGame.isSystemApplet {
+            config.gamepath = "0x\(currentGame.titleId)"
+        } else {
+            config.gamepath = currentGame.fileURL.path
+        }
         config.inputids = Array(Set(controllerManager.selectedControllers))
         
         if config.inputids.isEmpty {
             config.inputids.append("0")
         }
         
+        print("Starting \(currentGame.isSystemApplet ? "system applet" : "game") \(currentGame.titleId) with path: \(config.gamepath)")
         print(config.inputids)
         
         do {

@@ -173,14 +173,19 @@ class Ryujinx : ObservableObject {
         
         
         runloop { [self] in
-            let url = URL(fileURLWithPath: config.gamepath)
+            let isSystemTitleLaunch = config.gamepath.hasPrefix("0x")
+            let url = isSystemTitleLaunch ? nil : URL(fileURLWithPath: config.gamepath)
             
             do {
                 let args = self.buildCommandLineArgs(from: config)
-                let accessing = url.startAccessingSecurityScopedResource()
+                if isSystemTitleLaunch {
+                    print("Ryujinx system title launch args: \(args)")
+                }
+                
+                let accessing = url?.startAccessingSecurityScopedResource() ?? false
                 defer {
                     if accessing {
-                        url.stopAccessingSecurityScopedResource()
+                        url?.stopAccessingSecurityScopedResource()
                     }
                 }
                 

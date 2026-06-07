@@ -1521,6 +1521,7 @@ namespace Ryujinx.Headless.SDL2
                 return;
             }
             
+            Logger.Info?.Print(LogClass.Application, $"Input path before system title resolution: {option.InputPath}");
 
             Match match = Regex.Match(option.InputPath, @"0x[0-9A-Fa-f]+");
             if (match.Success)
@@ -1528,6 +1529,7 @@ namespace Ryujinx.Headless.SDL2
                 string hexStr = match.Value.Substring(2);
                 ulong id = Convert.ToUInt64(hexStr, 16);
 
+                Logger.Info?.Print(LogClass.Application, $"Resolving system applet title 0x{id:X16}.");
                 _contentManager.LoadEntries();
 
                 string contentPath = _contentManager.GetInstalledContentPath(id, StorageId.BuiltInSystem, NcaContentType.Program);

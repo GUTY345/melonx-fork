@@ -235,7 +235,8 @@ struct DLCManagerSheet: View {
         do {
             let fileManager = FileManager.default
             let dlcDirectory = URL.documentsDirectory.appendingPathComponent("dlc")
-            let gameDlcDirectory = dlcDirectory.appendingPathComponent(game.titleId)
+            let canonicalTitleId = Self.canonicalTitleId(for: game)
+            let gameDlcDirectory = dlcDirectory.appendingPathComponent(canonicalTitleId)
             
             try fileManager.createDirectory(at: gameDlcDirectory, withIntermediateDirectories: true)
             
@@ -245,7 +246,7 @@ struct DLCManagerSheet: View {
             try fileManager.copyItem(at: url, to: destinationURL)
             
             // Fetch DLC metadata from Ryujinx
-            let dlcContent = Ryujinx.shared.getDlcNcaList(titleId: game.titleId, path: destinationURL.path)
+            let dlcContent = Ryujinx.shared.getDlcNcaList(titleId: canonicalTitleId, path: destinationURL.path)
             guard !dlcContent.isEmpty else {
                 try? fileManager.removeItem(at: destinationURL)
                 showAlert(title: "Failed to add DLC", message: "\(url.lastPathComponent) does not contain DLC for \(game.titleName).", actions:
@@ -313,14 +314,32 @@ private extension DLCManagerSheet {
     }
     
     static func relativeDlcDirectoryPath(for game: Game, dlcPath: URL) -> String {
-        "dlc/\(game.titleId)/\(dlcPath.lastPathComponent)"
+        "dlc/\(canonicalTitleId(for: game))/\(dlcPath.lastPathComponent)"
     }
     
     static func dlcJsonPath(for game: Game) -> URL {
         URL.documentsDirectory
             .appendingPathComponent("games")
-            .appendingPathComponent(game.titleId)
+            .appendingPathComponent(canonicalTitleId(for: game))
             .appendingPathComponent("dlc.json")
+    }
+
+    static func canonicalTitleId(for game: Game) -> String {
+        canonicalTitleId(game.titleId)
+    }
+
+    static func canonicalTitleId(_ titleId: String) -> String {
+        let trimmed = titleId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutPrefix = trimmed.hasPrefix("0x") || trimmed.hasPrefix("0X")
+            ? String(trimmed.dropFirst(2))
+            : trimmed
+
+        guard let parsed = UInt64(withoutPrefix, radix: 16) ?? UInt64(withoutPrefix) else {
+            return withoutPrefix.lowercased()
+        }
+
+        let baseTitleId = parsed & 0xffffffffffffe000
+        return String(format: "%016llx", baseTitleId)
     }
 }
 

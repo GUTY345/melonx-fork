@@ -39,7 +39,7 @@ enum SystemAppletLauncher {
     }
     
     private static func systemAppletGame(titleName: String, titleId: String, firmware: String) -> Game {
-        let appletURL = URL(string: "0x\(titleId)")!
+        let appletURL = URL(fileURLWithPath: "0x\(titleId)")
         
         return Game(
             containerFolder: URL(fileURLWithPath: "none"),

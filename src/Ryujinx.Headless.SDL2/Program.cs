@@ -254,6 +254,12 @@ namespace Ryujinx.Headless.SDL2
                 return new DlcNcaList { success = false };
             }
 
+            if (!TryParseTitleIdBase(titleId, out ulong titleIdBase))
+            {
+                Logger.Warning?.Print(LogClass.Application, $"Unable to parse title id '{titleId}' while adding DLC.");
+                return new DlcNcaList { success = false };
+            }
+
             using FileStream containerFile = File.OpenRead(containerPath);
 
             PartitionFileSystem pfs = new();
@@ -278,13 +284,15 @@ namespace Ryujinx.Headless.SDL2
 
                 if (nca.Header.ContentType == NcaContentType.PublicData)
                 {
-                    if ((nca.Header.TitleId & 0xFFFFFFFFFFFFE000).ToString("x16") != titleId)
+                    ulong dlcTitleIdBase = nca.Header.TitleId & ~0x1FFFUL;
+                    if (dlcTitleIdBase != titleIdBase)
                     {
+                        Logger.Info?.Print(LogClass.Application, $"Skipping DLC NCA 0x{nca.Header.TitleId:X16}; base 0x{dlcTitleIdBase:X16} does not match selected title 0x{titleIdBase:X16}.");
                         continue;
                     }
 
                     Logger.Warning?.Print(LogClass.Application, $"ContainerPath: {containerPath}");
-                    Logger.Warning?.Print(LogClass.Application, $"TitleId: {nca.Header.TitleId}");
+                    Logger.Warning?.Print(LogClass.Application, $"TitleId: 0x{nca.Header.TitleId:X16}");
                     Logger.Warning?.Print(LogClass.Application, $"fileEntry.FullPath: {fileEntry.FullPath}");
                     
                     DlcNcaListItem item = new();
@@ -318,6 +326,31 @@ namespace Ryujinx.Headless.SDL2
             list.items = itemPointer;
             
             return list;
+        }
+
+        private static bool TryParseTitleIdBase(string titleId, out ulong titleIdBase)
+        {
+            titleIdBase = 0;
+
+            if (string.IsNullOrWhiteSpace(titleId))
+            {
+                return false;
+            }
+
+            string normalized = titleId.Trim();
+            if (normalized.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                normalized = normalized[2..];
+            }
+
+            if (!ulong.TryParse(normalized, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong parsed) &&
+                !ulong.TryParse(normalized, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
+            {
+                return false;
+            }
+
+            titleIdBase = parsed & ~0x1FFFUL;
+            return true;
         }
 
         [UnmanagedCallersOnly(EntryPoint = "free_dlc_nca_list")]

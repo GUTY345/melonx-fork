@@ -77,7 +77,7 @@ struct DLCManagerSheet: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        FileImporterManager.shared.importFiles(types: [.item], allowMultiple: true, completion: handleFileImport)
+                        FileImporterManager.shared.importFiles(types: [.nsp, .item], allowMultiple: true, completion: handleFileImport)
                     } label: {
                         Label("Add DLC", systemImage: "plus")
                     }
@@ -247,7 +247,12 @@ struct DLCManagerSheet: View {
             // Fetch DLC metadata from Ryujinx
             let dlcContent = Ryujinx.shared.getDlcNcaList(titleId: game.titleId, path: destinationURL.path)
             guard !dlcContent.isEmpty else {
-                print("No valid DLC content found")
+                try? fileManager.removeItem(at: destinationURL)
+                showAlert(title: "Failed to add DLC", message: "\(url.lastPathComponent) does not contain DLC for \(game.titleName).", actions:
+                    [
+                        (title: "OK", style: .default, handler: nil)
+                    ]
+                )
                 return
             }
             
@@ -258,11 +263,16 @@ struct DLCManagerSheet: View {
             )
             
             
+            dlcs.removeAll { $0.containerPath == newDlcContainer.containerPath }
             dlcs.append(newDlcContainer)
             Self.saveDlcs(game, dlc: dlcs)
             
         } catch {
-            print("Error importing DLC: \(error)")
+            showAlert(title: "Failed to add DLC", message: error.localizedDescription, actions:
+                [
+                    (title: "OK", style: .default, handler: nil)
+                ]
+            )
         }
     }
     

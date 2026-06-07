@@ -45,6 +45,8 @@ struct DlcNcaList {
     struct DlcNcaListItem* items;
 };
 
+void free_dlc_nca_list(struct DlcNcaList list);
+
 struct AvatarInfo
 {
     unsigned char* ImageData;
@@ -83,4 +85,3 @@ bool BreakTestJITScript() {
 #endif
 
 #endif /* RyujinxSDL_h */
-

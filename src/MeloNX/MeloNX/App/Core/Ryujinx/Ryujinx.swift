@@ -647,9 +647,13 @@ class Ryujinx : ObservableObject {
 
         let listPointer = RyujinxBridge.getDlcList(titleId: titleId, path: path)//get_dlc_nca_list(titleIdCString, pathCString)
         // print("DLC parcing success: \(listPointer.success)")
-        guard listPointer.success else { return [] }
+        defer {
+            RyujinxBridge.freeDlcList(listPointer)
+        }
+        
+        guard listPointer.success, let items = listPointer.items, listPointer.size > 0 else { return [] }
 
-        let list = Array(UnsafeBufferPointer(start: listPointer.items, count: Int(listPointer.size)))
+        let list = Array(UnsafeBufferPointer(start: items, count: Int(listPointer.size)))
 
         return list.map { item in
                 .init(fullPath: withUnsafePointer(to: item.Path) {

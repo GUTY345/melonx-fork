@@ -280,7 +280,7 @@ namespace Ryujinx.Headless.SDL2
                 {
                     if ((nca.Header.TitleId & 0xFFFFFFFFFFFFE000).ToString("x16") != titleId)
                     {
-                        break;
+                        continue;
                     }
 
                     Logger.Warning?.Print(LogClass.Application, $"ContainerPath: {containerPath}");
@@ -306,13 +306,27 @@ namespace Ryujinx.Headless.SDL2
             var list = new DlcNcaList { success = true, size = (uint) listItems.Count };
 
             DlcNcaListItem[] items = listItems.ToArray();
+            int itemSize = sizeof(DlcNcaListItem);
+            IntPtr itemBuffer = Marshal.AllocHGlobal(itemSize * items.Length);
+            DlcNcaListItem* itemPointer = (DlcNcaListItem*)itemBuffer;
 
-            fixed (DlcNcaListItem* p = &items[0])
+            for (int i = 0; i < items.Length; i++)
             {
-                list.items = p;
+                itemPointer[i] = items[i];
             }
+
+            list.items = itemPointer;
             
             return list;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "free_dlc_nca_list")]
+        public static unsafe void FreeDlcNcaList(DlcNcaList list)
+        {
+            if (list.items != null)
+            {
+                Marshal.FreeHGlobal((IntPtr)list.items);
+            }
         }
 
         private static Nca TryCreateNca(IStorage ncaStorage, string containerPath)

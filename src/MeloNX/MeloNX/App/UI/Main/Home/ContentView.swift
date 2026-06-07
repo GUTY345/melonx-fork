@@ -118,7 +118,7 @@ struct ContentView: View {
             .environment(\.gameNamespace, gameAnimation)
             .fullScreenCover(isPresented: shouldLaunchGameBinding) {
                 Group {
-                    if #available(iOS 18.0, *) {
+                    if #available(iOS 18.0, *), gameHandler.currentGame?.isSystemApplet != true {
                         EmulationContainerView()
                             .navigationTransition(.zoom(
                                 sourceID: gameHandler.currentGame?.fileURL.absoluteString ?? "cool",

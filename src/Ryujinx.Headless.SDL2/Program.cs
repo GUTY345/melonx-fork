@@ -673,8 +673,11 @@ namespace Ryujinx.Headless.SDL2
 
                 _contentManager.LoadEntries();
                 string contentPath = _contentManager.GetInstalledContentPath(titleId, StorageId.BuiltInSystem, NcaContentType.Program);
+                string realPath = string.IsNullOrWhiteSpace(contentPath)
+                    ? string.Empty
+                    : VirtualFileSystem.SwitchPathToSystemPath(contentPath);
 
-                return Marshal.StringToHGlobalAnsi(contentPath ?? string.Empty);
+                return Marshal.StringToHGlobalAnsi(realPath);
             }
             catch (Exception ex)
             {
@@ -1901,8 +1904,9 @@ namespace Ryujinx.Headless.SDL2
 
             bool isFirmwareTitle = false;
 
-            if (path.StartsWith("@SystemContent"))
+            if (path.StartsWith("@SystemContent") || path.StartsWith("/@SystemContent"))
             {
+                path = path.TrimStart('/');
                 path = VirtualFileSystem.SwitchPathToSystemPath(path);
 
                 isFirmwareTitle = true;

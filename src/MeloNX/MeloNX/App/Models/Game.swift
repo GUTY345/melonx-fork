@@ -24,7 +24,10 @@ public struct Game: Codable, Identifiable, Equatable, Hashable, Sendable {
         UIImage(data: iconData ?? Data())
     }
     var isSystemApplet: Bool {
-        fileURL.absoluteString.hasPrefix("0x") || fileURL.path.hasPrefix("0x")
+        titleId == "0100000000001000"
+            || titleId == "0100000000001009"
+            || fileURL.absoluteString.hasPrefix("0x")
+            || fileURL.path.hasPrefix("0x")
     }
     
     

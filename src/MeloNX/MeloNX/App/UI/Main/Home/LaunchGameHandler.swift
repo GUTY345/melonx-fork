@@ -10,7 +10,13 @@ import Foundation
 import SwiftUI
 
 class LaunchGameHandler: ObservableObject {
-    @Published var currentGame: Game? = nil
+    @Published var currentGame: Game? = nil {
+        didSet {
+            if currentGame == nil {
+                isStartingGame = false
+            }
+        }
+    }
     @Published var profileSelected = false
     @Published var showApp: Bool = true
     @Published var isPortrait: Bool = true
@@ -26,6 +32,7 @@ class LaunchGameHandler: ObservableObject {
     private let settingsManager = SettingsManager.shared
     private let persettings = PerGameSettingsManager.shared
     private let controllerManager = ControllerManager.shared
+    private var isStartingGame = false
     
     private var config: Ryujinx.Arguments {
         settingsManager.config
@@ -67,7 +74,12 @@ class LaunchGameHandler: ObservableObject {
     
     
     func enableJIT() {
-        if currentGame?.isSystemApplet == true {
+        guard let currentGame else { return }
+        enableJIT(for: currentGame)
+    }
+    
+    func enableJIT(for game: Game) {
+        if game.isSystemApplet {
             ryujinx.jitenabled = checkDebugged() && allocateTest()
         } else {
             ryujinx.checkForJIT()
@@ -90,13 +102,20 @@ class LaunchGameHandler: ObservableObject {
     }
     
     func startGame() {
-        enableJIT()
+        guard !isStartingGame, let currentGame else { return }
+        isStartingGame = true
+        
+        configureEnvironmentVariables(for: currentGame)
+        enableJIT(for: currentGame)
+        
+        guard ryujinx.jitenabled || nativeSettings.ignoreJIT.value else {
+            isStartingGame = false
+            return
+        }
+        
         MusicSelectorView.stopMusic()
         nativeSettings.isVirtualController.value = controllerManager.hasVirtualController()
         MetalView.createView()
-        
-        guard let currentGame else { return }
-        
         persettings.loadSettings()
         
         var config = persettings.config[currentGame.titleId] ?? self.config
@@ -114,11 +133,11 @@ class LaunchGameHandler: ObservableObject {
         }
         
         print(config.inputids)
-        configureEnvironmentVariables(for: currentGame)
         
         do {
             try ryujinx.start(with: config)
         } catch {
+            isStartingGame = false
             print("Failed to start game '\(currentGame.titleId)': \(error)")
         }
     }
@@ -127,6 +146,7 @@ class LaunchGameHandler: ObservableObject {
         if game.isSystemApplet {
             setenv("DUAL_MAPPED_JIT", "0", 1)
             Self.succeededJIT = true
+            print("Launching system applet \(game.titleId) with DUAL_MAPPED_JIT=0")
             configureMoltenVKEnvironment()
             return
         }
@@ -140,9 +160,11 @@ class LaunchGameHandler: ObservableObject {
         
         if useDualMappedJIT {
             setenv("DUAL_MAPPED_JIT", "1", 1)
+            print("Launching game \(game.titleId) with DUAL_MAPPED_JIT=1")
             Self.succeededJIT = RyujinxBridge.initialize_dualmapped()
         } else {
             setenv("DUAL_MAPPED_JIT", "0", 1)
+            print("Launching game \(game.titleId) with DUAL_MAPPED_JIT=0")
         }
         
         configureMoltenVKEnvironment()

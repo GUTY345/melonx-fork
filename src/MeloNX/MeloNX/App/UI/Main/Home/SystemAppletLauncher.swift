@@ -30,6 +30,10 @@ enum SystemAppletLauncher {
     }
     
     private static func launch(titleName: String, titleId: String, firmware: String, using gameHandler: LaunchGameHandler) {
+        guard gameHandler.currentGame == nil, !Ryujinx.shared.isRunning else {
+            return
+        }
+        
         gameHandler.profileSelected = true
         gameHandler.currentGame = systemAppletGame(titleName: titleName, titleId: titleId, firmware: firmware)
     }

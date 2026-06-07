@@ -18,6 +18,7 @@ struct LoadingOverlayView: View {
     @State private var loadingType = ""
     @State private var currentProgress = 0
     @State private var totalProgress = 1
+    @State private var didStartEmulation = false
     
     private let clumpWidth: CGFloat = 100
     
@@ -92,6 +93,11 @@ struct LoadingOverlayView: View {
     }
     
     private func setupLoading() {
+        guard !didStartEmulation else {
+            return
+        }
+        
+        didStartEmulation = true
         isAnimating = true
         Ryujinx.shared.showLoading = true
         
@@ -143,4 +149,3 @@ struct LoadingOverlayView: View {
         }
     }
 }
-

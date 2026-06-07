@@ -1,0 +1,146 @@
+//
+//  GamesListView+ToolBar.swift
+//  MeloNX
+//
+//  Created by Stossy11 on 10/11/2025.
+//
+
+import SwiftUI
+
+extension GamesListView {
+    func toolbarHandler() -> some ToolbarContent {
+        Group {
+            ToolbarItem(placement: .topBarTrailing) {
+                addGameButton
+            }
+            
+            ToolbarItem(placement: .topBarLeading) {
+                optionsSection
+            }
+        }
+    }
+    
+    
+    private var addGameButton: some View {
+        Button {
+            FileImporterManager.shared.importFiles(types: [.nsp, .xci, .item]) { result in
+                ImportHandler.handleAddingGame(result: result)
+            }
+        } label: {
+            Label("Add Game", systemImage: "plus")
+                .labelStyle(.iconOnly)
+                .font(.system(size: 16, weight: .semibold))
+                .backgroundDisableLiquid()
+        }
+        .accentColor(.blue)
+    }
+    
+    private var optionsSection: some View {
+        Menu {
+            firmwareSection
+            
+            Divider()
+            
+            Button {
+                FileImporterManager.shared.importFiles(types: [.nsp, .xci, .item]) { result in
+                    ImportHandler.handleRunningGame(result: result, gameHandler: gameHandler)
+                }
+            } label: {
+                Label("Open Game", systemImage: "square.and.arrow.down")
+            }
+            
+            Button {
+                let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                var sharedurl = documentsUrl.absoluteString.replacingOccurrences(of: "file://", with: "shareddocuments://")
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    sharedurl = documentsUrl.absoluteString
+                }
+                if UIApplication.shared.canOpenURL(URL(string: sharedurl)!) {
+                    UIApplication.shared.open(URL(string: sharedurl)!, options: [:])
+                }
+            } label: {
+                Label("Show MeloNX Folder", systemImage: "folder")
+            }
+            
+            Divider()
+            
+            Button {
+                self.activeSheet = .account
+            } label: {
+                Label("Profile Manager", systemImage: "person.2")
+            }
+            
+        } label: {
+            Label("Options", systemImage: "ellipsis.circle")
+                .labelStyle(.iconOnly)
+                .foregroundColor(.blue)
+                .backgroundDisableLiquid()
+        }
+    }
+
+    private var firmwareSection: some View {
+        Group {
+            if firmware == "0" {
+                Button {
+                    FileImporterManager.shared.importFiles(types: [.folder, .zip, .item], allowMultiple: true) { result in
+                        ImportHandler.handleFirmwareImport(result: result)
+                    }
+                } label: {
+                    Label("Install Firmware", systemImage: "square.and.arrow.down")
+                }
+            
+            } else {
+                Button {
+                    
+                } label: {
+                    Text("Firmware: \(firmware)")
+                }
+                
+                Menu("Applets") {
+                    Button {
+                        self.gameHandler.currentGame = systemAppletGame(
+                            titleName: "Switch Home",
+                            titleId: "0100000000001000"
+                        )
+                    } label: {
+                        Label("Launch Switch Home", systemImage: "house")
+                    }
+
+                    Button {
+                        self.gameHandler.currentGame = systemAppletGame(
+                            titleName: "Mii Maker",
+                            titleId: "0100000000001009"
+                        )
+                    } label: {
+                        Label("Launch Mii Maker", systemImage: "person.crop.circle")
+                    }
+                }
+            }
+        }
+    }
+
+    private func systemAppletGame(titleName: String, titleId: String) -> Game {
+        let appletURL = URL(string: "0x\(titleId)")!
+
+        return Game(
+            containerFolder: URL(fileURLWithPath: "none"),
+            fileType: .item,
+            fileURL: appletURL,
+            titleName: titleName,
+            titleId: titleId,
+            developer: "Nintendo",
+            version: firmware
+        )
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func backgroundDisableLiquid() -> some View {
+        if NativeSettingsManager.shared.disableLiquidGlass.value {
+            self.padding(10).background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        } else {
+            self
+        }
+    }
+}

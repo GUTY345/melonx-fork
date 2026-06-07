@@ -41,10 +41,15 @@ class LaunchGameHandler: ObservableObject {
     private var hasJITEntitlement: Bool {
         ProcessInfo.processInfo.isiOSAppOnMac ? true : checkAppEntitlement(Self.jitEntitlement)
     }
+
+    private var currentGameHasJIT: Bool {
+        guard currentGame != nil else { return false }
+        return nativeSettings.ignoreJIT.value || ryujinx.jitenabled
+    }
     
     var isGameReady: Bool {
         currentGame != nil
-            && (nativeSettings.ignoreJIT.value ? true : ryujinx.jitenabled)
+            && currentGameHasJIT
             && (nativeSettings.showProfileonGame.value ? profileSelected : true)
     }
     
@@ -69,6 +74,7 @@ class LaunchGameHandler: ObservableObject {
             && !ryujinx.jitenabled
             && !(nativeSettings.ignoreJIT.value as Bool)
             && hasJITEntitlement
+            && currentGame?.isSystemApplet != true
     }
     
     
@@ -79,11 +85,7 @@ class LaunchGameHandler: ObservableObject {
     }
     
     func enableJIT(for game: Game) {
-        if game.isSystemApplet {
-            ryujinx.jitenabled = checkDebugged() && allocateTest()
-        } else {
-            ryujinx.checkForJIT()
-        }
+        ryujinx.checkForJIT()
         print("Has TXM? \(ProcessInfo.processInfo.hasTXM)")
         
         if !ryujinx.jitenabled {
@@ -149,14 +151,6 @@ class LaunchGameHandler: ObservableObject {
     }
     
     private func configureEnvironmentVariables(for game: Game) {
-        if game.isSystemApplet {
-            setenv("DUAL_MAPPED_JIT", "0", 1)
-            Self.succeededJIT = true
-            print("Launching system applet \(game.titleId) with DUAL_MAPPED_JIT=0")
-            configureMoltenVKEnvironment()
-            return
-        }
-        
         let useDualMappedJIT: Bool
         if #available(iOS 19, *) {
             useDualMappedJIT = nativeSettings.setting(forKey: "DUAL_MAPPED_JIT", default: true).value
@@ -166,11 +160,11 @@ class LaunchGameHandler: ObservableObject {
         
         if useDualMappedJIT {
             setenv("DUAL_MAPPED_JIT", "1", 1)
-            print("Launching game \(game.titleId) with DUAL_MAPPED_JIT=1")
+            print("Launching \(game.isSystemApplet ? "system applet" : "game") \(game.titleId) with DUAL_MAPPED_JIT=1")
             Self.succeededJIT = RyujinxBridge.initialize_dualmapped()
         } else {
             setenv("DUAL_MAPPED_JIT", "0", 1)
-            print("Launching game \(game.titleId) with DUAL_MAPPED_JIT=0")
+            print("Launching \(game.isSystemApplet ? "system applet" : "game") \(game.titleId) with DUAL_MAPPED_JIT=0")
         }
         
         configureMoltenVKEnvironment()

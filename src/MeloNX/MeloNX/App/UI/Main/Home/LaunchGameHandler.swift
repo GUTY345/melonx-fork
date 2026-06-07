@@ -130,11 +130,7 @@ class LaunchGameHandler: ObservableObject {
             config.disablePTC = true
             config.resscale = 1.0
         }
-        if currentGame.isSystemApplet {
-            config.gamepath = "0x\(currentGame.titleId)"
-        } else {
-            config.gamepath = currentGame.fileURL.path
-        }
+        config.gamepath = currentGame.fileURL.path
         config.inputids = Array(Set(controllerManager.selectedControllers))
         
         if config.inputids.isEmpty {

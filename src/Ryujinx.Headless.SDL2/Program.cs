@@ -661,6 +661,28 @@ namespace Ryujinx.Headless.SDL2
             return Marshal.StringToHGlobalAnsi(result);
         }
 
+        [UnmanagedCallersOnly(EntryPoint = "get_system_applet_path")]
+        public static IntPtr GetSystemAppletPathNative(ulong titleId)
+        {
+            try
+            {
+                if (_contentManager == null)
+                {
+                    return Marshal.StringToHGlobalAnsi(string.Empty);
+                }
+
+                _contentManager.LoadEntries();
+                string contentPath = _contentManager.GetInstalledContentPath(titleId, StorageId.BuiltInSystem, NcaContentType.Program);
+
+                return Marshal.StringToHGlobalAnsi(contentPath ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning?.Print(LogClass.Application, $"Failed to resolve system applet 0x{titleId:X16}: {ex.Message}");
+                return Marshal.StringToHGlobalAnsi(string.Empty);
+            }
+        }
+
         [UnmanagedCallersOnly(EntryPoint = "free_firmware_version")]
         public static void FreeFirmwareVersion(IntPtr versionPtr)
         {

@@ -1,3 +1,4 @@
+using LibHac.Ncm;
 using Ryujinx.Common;
 using System.Runtime.InteropServices;
 using System;
@@ -13,7 +14,19 @@ namespace Ryujinx.HLE.HOS.Services.Am.AppletAE.AllSystemAppletProxiesService.Lib
 
         public ILibraryAppletSelfAccessor(ServiceCtx context)
         {
-            if (context.Device.Processes.ActiveApplication.ProgramId == 0x0100000000001009)
+            ulong programId = context.Device.Processes.ActiveApplication.ProgramId;
+
+            if (programId == 0x0100000000001000)
+            {
+                _appletStandalone = new AppletStandalone()
+                {
+                    AppletId = AppletId.QLaunch,
+                    LibraryAppletMode = LibraryAppletMode.AllForeground,
+                };
+
+                _appletStandalone.InputData.Enqueue(Array.Empty<byte>());
+            }
+            else if (programId == 0x0100000000001009)
             {
                 // Create MiiEdit data.
                 _appletStandalone = new AppletStandalone()
@@ -29,7 +42,7 @@ namespace Ryujinx.HLE.HOS.Services.Am.AppletAE.AllSystemAppletProxiesService.Lib
             }
             else
             {
-                throw new NotImplementedException($"{context.Device.Processes.ActiveApplication.ProgramId} applet is not implemented.");
+                throw new NotImplementedException($"{programId} applet is not implemented.");
             }
         }
 
@@ -37,6 +50,11 @@ namespace Ryujinx.HLE.HOS.Services.Am.AppletAE.AllSystemAppletProxiesService.Lib
         // PopInData() -> object<nn::am::service::IStorage>
         public ResultCode PopInData(ServiceCtx context)
         {
+            if (_appletStandalone.InputData.Count == 0)
+            {
+                return ResultCode.NotAvailable;
+            }
+
             byte[] appletData = _appletStandalone.InputData.Dequeue();
 
             if (appletData.Length == 0)
@@ -80,17 +98,61 @@ namespace Ryujinx.HLE.HOS.Services.Am.AppletAE.AllSystemAppletProxiesService.Lib
             return ResultCode.Success;
         }
 
+        [CommandCmif(12)]
+        // GetMainAppletIdentityInfo() -> nn::am::service::AppletIdentityInfo
+        public ResultCode GetMainAppletIdentityInfo(ServiceCtx context)
+        {
+            AppletIdentifyInfo appletIdentifyInfo = new()
+            {
+                AppletId = AppletId.QLaunch,
+                TitleId = 0x0100000000001000UL,
+            };
+
+            context.ResponseData.WriteStruct(appletIdentifyInfo);
+
+            return ResultCode.Success;
+        }
+
+        [CommandCmif(13)]
+        // CanUseApplicationCore() -> bool
+        public ResultCode CanUseApplicationCore(ServiceCtx context)
+        {
+            context.ResponseData.Write(false);
+
+            return ResultCode.Success;
+        }
+
         [CommandCmif(14)]
         // GetCallerAppletIdentityInfo() -> nn::am::service::AppletIdentityInfo
         public ResultCode GetCallerAppletIdentityInfo(ServiceCtx context)
         {
             AppletIdentifyInfo appletIdentifyInfo = new()
             {
-                AppletId = AppletId.QLaunch,
-                TitleId = 0x0100000000001000,
+                AppletId = _appletStandalone.AppletId == AppletId.QLaunch ? AppletId.Application : AppletId.QLaunch,
+                TitleId = _appletStandalone.AppletId == AppletId.QLaunch ? 0UL : 0x0100000000001000UL,
             };
 
             context.ResponseData.WriteStruct(appletIdentifyInfo);
+
+            return ResultCode.Success;
+        }
+
+        [CommandCmif(16)]
+        // GetMainAppletStorageId() -> nn::fssrv::sf::StorageId
+        public ResultCode GetMainAppletStorageId(ServiceCtx context)
+        {
+            context.ResponseData.Write((byte)StorageId.BuiltInSystem);
+
+            return ResultCode.Success;
+        }
+
+        [CommandCmif(70)]
+        // GetCurrentApplicationId() -> u64
+        public ResultCode GetCurrentApplicationId(ServiceCtx context)
+        {
+            ulong titleId = context.Device.Processes.ActiveApplication.ProgramId;
+
+            context.ResponseData.Write(titleId);
 
             return ResultCode.Success;
         }

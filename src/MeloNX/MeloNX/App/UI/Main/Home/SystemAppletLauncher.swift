@@ -33,13 +33,28 @@ enum SystemAppletLauncher {
         guard gameHandler.currentGame == nil, !Ryujinx.shared.isRunning else {
             return
         }
+
+        guard let titleIdValue = UInt64(titleId, radix: 16) else {
+            showAlert(title: "Applet unavailable", message: "Invalid system applet title ID.", actions: [
+                (title: "OK", style: .default, handler: nil)
+            ])
+            return
+        }
+
+        let appletPath = RyujinxBridge.systemAppletPath(titleId: titleIdValue)
+        guard !appletPath.isEmpty else {
+            showAlert(title: "Applet unavailable", message: "\(titleName) was not found in the installed firmware. Re-import firmware and try again.", actions: [
+                (title: "OK", style: .default, handler: nil)
+            ])
+            return
+        }
         
         gameHandler.profileSelected = true
-        gameHandler.currentGame = systemAppletGame(titleName: titleName, titleId: titleId, firmware: firmware)
+        gameHandler.currentGame = systemAppletGame(titleName: titleName, titleId: titleId, firmware: firmware, path: appletPath)
     }
     
-    private static func systemAppletGame(titleName: String, titleId: String, firmware: String) -> Game {
-        let appletURL = URL(fileURLWithPath: "0x\(titleId)")
+    private static func systemAppletGame(titleName: String, titleId: String, firmware: String, path: String) -> Game {
+        let appletURL = URL(fileURLWithPath: path)
         
         return Game(
             containerFolder: URL(fileURLWithPath: "none"),

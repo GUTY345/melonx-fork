@@ -48,6 +48,12 @@ final class RyujinxBridge {
         return String(cString: firmware)
     }
 
+    static func systemAppletPath(titleId: UInt64) -> String {
+        guard let path = SN_get_system_applet_path(titleId) else { return "" }
+        defer { SN_free_firmware_version(path) }
+        return String(cString: path)
+    }
+
     static func pauseEmulation(_ shouldPause: Bool) {
         SN_pause_emulation(shouldPause)
     }
@@ -186,6 +192,9 @@ func SN_install_firmware(_ inputPtr: UnsafePointer<CChar>!) -> UnsafeMutablePoin
 
 @_silgen_name("installed_firmware_version")
 func SN_installed_firmware_version() -> UnsafeMutablePointer<CChar>!
+
+@_silgen_name("get_system_applet_path")
+func SN_get_system_applet_path(_ titleId: UInt64) -> UnsafeMutablePointer<CChar>!
 
 @_silgen_name("set_native_window")
 func SN_set_native_window(_ layerPtr: UnsafeMutableRawPointer!)

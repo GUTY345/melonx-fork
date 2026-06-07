@@ -88,7 +88,7 @@ struct SetupView: View {
             keysImported = Ryujinx.shared.checkIfKeysImported()
             
             let firmware = Ryujinx.shared.fetchFirmwareVersion()
-            firmImported = (firmware == "" ? "0" : firmware) != "0"
+            firmImported = firmware != "0" || Ryujinx.shared.hasInstalledFirmwareFiles()
         }
     }
     
@@ -441,9 +441,9 @@ struct SetupView: View {
                 }
             }
             
-            let (message, _) = FirmwareInstaller.install(from: selectedFiles)
+            let (message, isError) = FirmwareInstaller.install(from: selectedFiles)
             
-            firmImported = (Ryujinx.shared.firmwareversion == "" ? "0" : Ryujinx.shared.firmwareversion) != "0"
+            firmImported = !isError && Ryujinx.shared.hasInstalledFirmwareFiles()
             alertMessage = message
             showAlert = true
             

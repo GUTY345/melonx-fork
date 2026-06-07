@@ -631,7 +631,15 @@ class Ryujinx : ObservableObject {
         
         let firmwareVersionPointer = RyujinxBridge.installedFirmwareVersion
 
-        return firmwareVersionPointer.isEmpty ? "0" : firmwareVersionPointer
+        if !firmwareVersionPointer.isEmpty {
+            return firmwareVersionPointer
+        }
+        
+        return hasInstalledFirmwareFiles() ? "1" : "0"
+    }
+    
+    func hasInstalledFirmwareFiles() -> Bool {
+        FirmwareInstaller.hasInstalledFirmwareFiles()
     }
     
 
@@ -735,6 +743,11 @@ enum FirmwareInstaller {
         }
         
         let result = RyujinxBridge.installFirmware(at: url.path)
+        
+        if !result.isError {
+            Ryujinx.shared.firmwareversion = installedFirmwareVersionAfterCopy()
+        }
+        
         return (result.string, result.isError)
     }
     
@@ -749,7 +762,7 @@ enum FirmwareInstaller {
             }
             
             try replaceRegisteredFolder(with: files)
-            let version = Ryujinx.shared.fetchFirmwareVersion()
+            let version = installedFirmwareVersionAfterCopy()
             Ryujinx.shared.firmwareversion = version
             
             let displayVersion = (version == "" ? "0" : version)
@@ -768,7 +781,7 @@ enum FirmwareInstaller {
             }
             
             try replaceRegisteredFolder(with: supportedFiles)
-            let version = Ryujinx.shared.fetchFirmwareVersion()
+            let version = installedFirmwareVersionAfterCopy()
             Ryujinx.shared.firmwareversion = version
             
             let displayVersion = (version == "" ? "0" : version)
@@ -797,6 +810,24 @@ enum FirmwareInstaller {
             
             try fileManager.copyItem(at: file, to: destination)
         }
+    }
+    
+    static func hasInstalledFirmwareFiles() -> Bool {
+        guard let files = try? firmwareFiles(in: registeredFolderURL()) else {
+            return false
+        }
+        
+        return !files.isEmpty
+    }
+    
+    private static func installedFirmwareVersionAfterCopy() -> String {
+        let version = RyujinxBridge.installedFirmwareVersion
+        
+        if !version.isEmpty {
+            return version
+        }
+        
+        return hasInstalledFirmwareFiles() ? "1" : "0"
     }
     
     private static func firmwareFiles(in folderURL: URL) throws -> [URL] {

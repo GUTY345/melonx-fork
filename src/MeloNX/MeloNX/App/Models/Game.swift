@@ -23,6 +23,9 @@ public struct Game: Codable, Identifiable, Equatable, Hashable, Sendable {
     var icon: UIImage? {
         UIImage(data: iconData ?? Data())
     }
+    var isSystemApplet: Bool {
+        fileURL.absoluteString.hasPrefix("0x") || fileURL.path.hasPrefix("0x")
+    }
     
     
     static func convertGameInfoToGame(gameInfo: GameInfo, url: URL) -> Game {

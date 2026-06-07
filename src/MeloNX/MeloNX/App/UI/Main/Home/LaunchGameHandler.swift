@@ -67,7 +67,11 @@ class LaunchGameHandler: ObservableObject {
     
     
     func enableJIT() {
-        ryujinx.checkForJIT()
+        if currentGame?.isSystemApplet == true {
+            ryujinx.jitenabled = checkDebugged() && allocateTest()
+        } else {
+            ryujinx.checkForJIT()
+        }
         print("Has TXM? \(ProcessInfo.processInfo.hasTXM)")
         
         if !ryujinx.jitenabled {
@@ -110,7 +114,7 @@ class LaunchGameHandler: ObservableObject {
         }
         
         print(config.inputids)
-        configureEnvironmentVariables()
+        configureEnvironmentVariables(for: currentGame)
         
         do {
             try ryujinx.start(with: config)
@@ -119,7 +123,14 @@ class LaunchGameHandler: ObservableObject {
         }
     }
     
-    private func configureEnvironmentVariables() {
+    private func configureEnvironmentVariables(for game: Game) {
+        if game.isSystemApplet {
+            setenv("DUAL_MAPPED_JIT", "0", 1)
+            Self.succeededJIT = true
+            configureMoltenVKEnvironment()
+            return
+        }
+        
         let useDualMappedJIT: Bool
         if #available(iOS 19, *) {
             useDualMappedJIT = nativeSettings.setting(forKey: "DUAL_MAPPED_JIT", default: true).value
@@ -133,6 +144,11 @@ class LaunchGameHandler: ObservableObject {
         } else {
             setenv("DUAL_MAPPED_JIT", "0", 1)
         }
+        
+        configureMoltenVKEnvironment()
+    }
+    
+    private func configureMoltenVKEnvironment() {
         
         guard let device = MTLCreateSystemDefaultDevice() else {
             setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1)

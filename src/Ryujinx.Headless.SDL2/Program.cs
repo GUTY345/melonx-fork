@@ -1480,7 +1480,19 @@ namespace Ryujinx.Headless.SDL2
             {
                 string hexStr = match.Value.Substring(2);
                 ulong id = Convert.ToUInt64(hexStr, 16);
+
+                _contentManager.LoadEntries();
+
                 string contentPath = _contentManager.GetInstalledContentPath(id, StorageId.BuiltInSystem, NcaContentType.Program);
+
+                if (string.IsNullOrWhiteSpace(contentPath))
+                {
+                    Logger.Error?.Print(LogClass.Application, $"Unable to find installed system applet title 0x{id:X16}. Re-import firmware and make sure system NCA files are present in bis/system/Contents/registered.");
+
+                    return;
+                }
+
+                Logger.Info?.Print(LogClass.Application, $"Resolved system applet 0x{id:X16} to {contentPath}.");
 
                 option.InputPath = contentPath;
             }
@@ -1541,11 +1553,11 @@ namespace Ryujinx.Headless.SDL2
 
                 if (logFile != null)
                 {
-                    //Logger.AddTarget(new AsyncLogTargetWrapper(
-                    //    new FileLogTarget("file", logFile),
-                    //    1000,
-                    //    AsyncLogTargetOverflowAction.Block
-                    // ));
+                    Logger.AddTarget(new AsyncLogTargetWrapper(
+                        new FileLogTarget("file", logFile),
+                        1000,
+                        AsyncLogTargetOverflowAction.Block
+                    ));
                 }
                 else
                 {

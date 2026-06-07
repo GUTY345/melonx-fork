@@ -124,26 +124,43 @@ namespace Ryujinx.HLE.FileSystem
                         locationList.AddLast(entry);
                     }
 
+                    void AddNcaEntry(string filePath)
+                    {
+                        string ncaName = Path.GetFileNameWithoutExtension(filePath);
+
+                        using FileStream ncaFile = File.OpenRead(filePath);
+                        Nca nca = new(_virtualFileSystem.KeySet, ncaFile.AsStorage());
+
+                        string switchPath = contentPathString + ":/" + filePath.Replace(contentDirectory, string.Empty).TrimStart(Path.DirectorySeparatorChar);
+
+                        // Change path format to switch's
+                        switchPath = switchPath.Replace('\\', '/');
+
+                        LocationEntry entry = new(switchPath, 0, nca.Header.TitleId, nca.Header.ContentType);
+
+                        AddEntry(entry);
+
+                        _contentDictionary.TryAdd((nca.Header.TitleId, nca.Header.ContentType), ncaName);
+                    }
+
                     foreach (string directoryPath in Directory.EnumerateDirectories(registeredDirectory))
                     {
-                        if (Directory.GetFiles(directoryPath).Length > 0)
+                        string[] files = Directory.GetFiles(directoryPath, "*.nca");
+
+                        if (files.Length == 0)
                         {
-                            string ncaName = new DirectoryInfo(directoryPath).Name.Replace(".nca", string.Empty);
-
-                            using FileStream ncaFile = File.OpenRead(Directory.GetFiles(directoryPath)[0]);
-                            Nca nca = new(_virtualFileSystem.KeySet, ncaFile.AsStorage());
-
-                            string switchPath = contentPathString + ":/" + ncaFile.Name.Replace(contentDirectory, string.Empty).TrimStart(Path.DirectorySeparatorChar);
-
-                            // Change path format to switch's
-                            switchPath = switchPath.Replace('\\', '/');
-
-                            LocationEntry entry = new(switchPath, 0, nca.Header.TitleId, nca.Header.ContentType);
-
-                            AddEntry(entry);
-
-                            _contentDictionary.Add((nca.Header.TitleId, nca.Header.ContentType), ncaName);
+                            files = Directory.GetFiles(directoryPath);
                         }
+
+                        if (files.Length > 0)
+                        {
+                            AddNcaEntry(files[0]);
+                        }
+                    }
+
+                    foreach (string filePath in Directory.EnumerateFiles(registeredDirectory, "*.nca"))
+                    {
+                        AddNcaEntry(filePath);
                     }
 
                     foreach (string filePath in Directory.EnumerateFiles(contentDirectory))

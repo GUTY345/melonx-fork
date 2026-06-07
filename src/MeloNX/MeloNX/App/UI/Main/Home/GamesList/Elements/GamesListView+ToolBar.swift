@@ -98,39 +98,19 @@ extension GamesListView {
                 
                 Menu("Applets") {
                     Button {
-                        self.gameHandler.currentGame = systemAppletGame(
-                            titleName: "Switch Home",
-                            titleId: "0100000000001000"
-                        )
+                        SystemAppletLauncher.launchSwitchHome(using: gameHandler, firmware: firmware)
                     } label: {
                         Label("Launch Switch Home", systemImage: "house")
                     }
 
                     Button {
-                        self.gameHandler.currentGame = systemAppletGame(
-                            titleName: "Mii Maker",
-                            titleId: "0100000000001009"
-                        )
+                        SystemAppletLauncher.launchMiiMaker(using: gameHandler, firmware: firmware)
                     } label: {
                         Label("Launch Mii Maker", systemImage: "person.crop.circle")
                     }
                 }
             }
         }
-    }
-
-    private func systemAppletGame(titleName: String, titleId: String) -> Game {
-        let appletURL = URL(string: "0x\(titleId)")!
-
-        return Game(
-            containerFolder: URL(fileURLWithPath: "none"),
-            fileType: .item,
-            fileURL: appletURL,
-            titleName: titleName,
-            titleId: titleId,
-            developer: "Nintendo",
-            version: firmware
-        )
     }
 }
 

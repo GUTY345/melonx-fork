@@ -443,13 +443,25 @@ struct SetupView: View {
             
             let (message, isError) = FirmwareInstaller.install(from: selectedFiles)
             
+            keysImported = Ryujinx.shared.checkIfKeysImported()
             firmImported = !isError && Ryujinx.shared.hasInstalledFirmwareFiles()
             alertMessage = message
             showAlert = true
             
+            finishSetupIfReady()
+            
         } catch {
             alertMessage = "Error importing firmware: \(error.localizedDescription)"
             showAlert = true
+        }
+    }
+    
+    private func finishSetupIfReady() {
+        guard firmImported && keysImported else { return }
+        
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            isInSetup = false
         }
     }
     

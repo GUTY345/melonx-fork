@@ -1083,6 +1083,9 @@ struct SettingsViewNew: View {
                 SettingsToggle(isOn: nativeSettingsManager.showProfileonGame.projectedValue, icon: "person.3", label: "Select Profile on Game Launch", infoMessage: "Shows up a popup that allows you to select a profile when you launch a game.")
                 Divider()
                 
+                SettingsToggle(isOn: nativeSettingsManager.setting(forKey: "LAUNCH_SWITCH_HOME_ON_STARTUP", default: false).projectedValue, icon: "house", label: "Launch Switch Home on Startup", infoMessage: "Opens the Nintendo Switch Home Menu applet automatically when MeloNX starts.\n\nLeave OFF to keep opening the normal game library first.")
+                Divider()
+                
                 Button {
                     showAppIconSwitcher = true
                 } label: {

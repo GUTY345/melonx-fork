@@ -17,6 +17,7 @@ struct ContentView: View {
     @State var showing = true
     @Binding var viewShown: Bool
     @State var date: Date?
+    @State private var didAutoLaunchSwitchHome = false
 
     @StateObject var nativeSettings: NativeSettingsManager = .shared
 
@@ -103,7 +104,9 @@ struct ContentView: View {
                     try? await Task.sleep(nanoseconds: 200_000_000)
                     viewShown = true
 
+                    let hadPendingGameLaunch = !gametorun.isEmpty
                     checkJITAndRunGame()
+                    launchSwitchHomeOnStartupIfNeeded(skip: hadPendingGameLaunch || AppDelegate.url != nil)
                     
                     if nativeSettings.mainThreadWatchdog.value {
                         Watchdog.shared.start()
@@ -197,6 +200,19 @@ struct ContentView: View {
                 checkJITAndRunGame(attempt: attempt + 1)
             }
         }
+    }
+    
+    private func launchSwitchHomeOnStartupIfNeeded(skip: Bool) {
+        guard !skip,
+              !didAutoLaunchSwitchHome,
+              nativeSettings.setting(forKey: "LAUNCH_SWITCH_HOME_ON_STARTUP", default: false).value,
+              ryujinx.fetchFirmwareVersion() != "0",
+              gameHandler.currentGame == nil else {
+            return
+        }
+        
+        didAutoLaunchSwitchHome = true
+        SystemAppletLauncher.launchSwitchHome(using: gameHandler)
     }
 
     private func handleDeepLink(_ url: URL) {

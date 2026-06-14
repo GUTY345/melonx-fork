@@ -31,8 +31,11 @@ struct MetalView: UIViewRepresentable {
             
             UIApplication.shared.isIdleTimerDisabled = true
             
-            //metalLayer.presentsWithTransaction = false
-            //metalLayer.allowsNextDrawableTimeout = false
+            metalLayer.presentsWithTransaction = false
+            metalLayer.allowsNextDrawableTimeout = false
+            if #available(iOS 11.0, *) {
+                metalLayer.maximumDrawableCount = 3
+            }
             
             let stabilityProfile = UserDefaults.standard.object(forKey: "THERMAL_STABILITY_PROFILE") as? Bool ?? true
             view.preferredFramesPerSecond = stabilityProfile ? 30 : 60

@@ -558,6 +558,14 @@ class Ryujinx : ObservableObject {
         if config.tracelogs {
             args.append("--enable-trace-logs")
         }
+
+        let quietRuntimeLogs = UserDefaults.standard.object(forKey: "MOBILE_PERFORMANCE_PROFILE") as? Bool ?? true
+        if quietRuntimeLogs {
+            args.append("--disable-file-logging")
+            args.append("--disable-info-logs")
+            args.append("--disable-stub-logs")
+            args.append("--disable-guest-logs")
+        }
         
         // List the input ids
         if config.listinputids {

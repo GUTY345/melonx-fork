@@ -4,6 +4,10 @@
 <dict>
 	<key>LCVersionInfo</key>
 	<string>Fork</string>
+	<key>CFBundleDisplayName</key>
+	<string>MeloNX Mod</string>
+	<key>CFBundleName</key>
+	<string>MeloNX Mod</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

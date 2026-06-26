@@ -2,7 +2,7 @@
 
 MeloNX Fork is an iOS/iPadOS-focused downstream fork of MeloNX, which itself is based on Ryujinx. This fork exists so we can improve mobile stability, thermal behavior, memory handling, firmware setup, and usability without pushing experimental changes back into the main MeloNX project.
 
-Current fork version: **1.0.0 Fork**
+Current fork version: **1.0.1 Fork**
 
 ## Project Goals
 

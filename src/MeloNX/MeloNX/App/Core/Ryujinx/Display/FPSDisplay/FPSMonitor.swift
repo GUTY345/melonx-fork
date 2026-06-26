@@ -27,6 +27,14 @@ class FPSMonitor: ObservableObject {
         while !Task.isCancelled {
             let currentfps = UInt64(RyujinxBridge.currentFPS)
             currentFPS = currentfps
+            UserDefaults.standard.set(currentfps, forKey: "fpsmonitor.currentFPS")
+            
+            ThermalGovernor.shared.recordFPS(currentfps)
+            
+            NotificationCenter.default.post(
+                name: .init("FPSUpdated"),
+                object: currentfps
+            )
 
             try? await Task.sleep(nanoseconds: 100_000_000)
         }

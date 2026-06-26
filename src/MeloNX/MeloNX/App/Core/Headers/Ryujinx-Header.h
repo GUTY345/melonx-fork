@@ -48,6 +48,9 @@ struct DlcNcaList {
 void free_dlc_nca_list(struct DlcNcaList list);
 char* get_system_applet_path(unsigned long titleId);
 
+// Auto Performance Governor settings
+void update_governor_settings(double resScale, float maxAnisotropy, bool disablePTC);
+
 struct AvatarInfo
 {
     unsigned char* ImageData;

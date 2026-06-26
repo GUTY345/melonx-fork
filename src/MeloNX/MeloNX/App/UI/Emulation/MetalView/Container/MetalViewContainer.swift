@@ -10,6 +10,8 @@ import SwiftUI
 struct MetalViewContainer: View {
     var hudView: AnyView
     
+    @StateObject private var shaderWarmup = ShaderWarmupManager.shared
+    
     init(isPortrait: Binding<Bool>, @ViewBuilder hudView: @escaping () -> some View) {
         self.hudView = AnyView(hudView())
         _isPortrait = isPortrait
@@ -36,6 +38,20 @@ struct MetalViewContainer: View {
                     
                     if isPortrait {
                         hudView
+                        Spacer()
+                    }
+                }
+                
+                if shaderWarmup.isWarmingUp, let progress = shaderWarmup.progress {
+                    VStack {
+                        Spacer()
+                        ProgressView(value: progress.percentage) {
+                            Text("Shader Warmup: \(Int(progress.percentage * 100))%")
+                        }
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(10)
+                        .padding(.horizontal)
                         Spacer()
                     }
                 }

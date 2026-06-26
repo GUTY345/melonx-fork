@@ -2204,6 +2204,20 @@ namespace Ryujinx.Headless.SDL2
                 _emulationContext.Configuration.MultiplayerLanInterfaceId = options.MultiplayerLanInterfaceId;
             }
         }
+
+        [UnmanagedCallersOnly(EntryPoint = "update_governor_settings")]
+        public static unsafe void UpdateGovernorSettings(double resScale, float maxAnisotropy, bool disablePTC)
+        {
+            GraphicsConfig.ResScale = (float)resScale;
+            GraphicsConfig.MaxAnisotropy = maxAnisotropy;
+
+            if (_emulationContext != null)
+            {
+                _emulationContext.System.EnablePtc = !disablePTC;
+            }
+
+            Logger.Info?.Print(LogClass.Application, $"Governor adjusted: resScale={resScale}, maxAniso={maxAnisotropy}, PTC disabled={disablePTC}");
+        }
     }
 
 

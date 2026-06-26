@@ -18,6 +18,7 @@ struct ContentView: View {
     @Binding var viewShown: Bool
     @State var date: Date?
     @State private var didAutoLaunchSwitchHome = false
+    @State private var showCrashDiagnostic = false
 
     @StateObject var nativeSettings: NativeSettingsManager = .shared
 
@@ -26,6 +27,10 @@ struct ContentView: View {
 
     private var shouldLaunchGameBinding: Binding<Bool> {
         .init(get: { gameHandler.shouldLaunchGame }, set: { _ in })
+    }
+    
+    private var showCrashDiagnosticBinding: Binding<Bool> {
+        .init(get: { showCrashDiagnostic && ryujinx.lastCrashDiagnostic != nil }, set: { showCrashDiagnostic = $0 })
     }
 
     private var shouldShowEntitlementBinding: Binding<Bool> {
@@ -135,10 +140,32 @@ struct ContentView: View {
                 }
                 .onDisappear {
                     gameHandler.showApp = true
+                    AutoPerformanceGovernor.shared.stopMonitoring()
+                    ThermalGovernor.shared.stopMonitoring()
+                }
+                .onChange(of: ryujinx.lastCrashDiagnostic) { newValue in
+                    if newValue != nil {
+                        showCrashDiagnostic = true
+                    }
                 }
                 .interactiveDismissDisabled()
                 .environmentObject(gameHandler)
                 .environmentObject(ryujinx)
+            }
+            .fullScreenCover(isPresented: showCrashDiagnosticBinding) {
+                if let diagnostic = ryujinx.lastCrashDiagnostic {
+                    NavigationView {
+                        CrashDiagnosticView(diagnostic: diagnostic)
+                            .navigationTitle("Crash Report")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                Button("Dismiss") {
+                                    showCrashDiagnostic = false
+                                    ryujinx.lastCrashDiagnostic = nil
+                                }
+                            }
+                    }
+                }
             }
             .alert(isPresented: shouldShowEntitlementBinding) {
                 Alert(

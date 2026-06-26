@@ -103,6 +103,7 @@ class LaunchGameHandler: ObservableObject {
         }
     }
     
+    @MainActor
     func startGame() {
         guard !isStartingGame, let currentGame else { return }
         isStartingGame = true
@@ -121,7 +122,7 @@ class LaunchGameHandler: ObservableObject {
         persettings.loadSettings()
         
         var config = persettings.config[currentGame.titleId] ?? self.config
-
+        
         controllerManager.registerControllerTypeForMatchingControllers()
         if nativeSettings.setting(forKey: "MOBILE_PERFORMANCE_PROFILE", default: true).value {
             let thermalStability = nativeSettings.setting(forKey: "THERMAL_STABILITY_PROFILE", default: true).value
@@ -132,6 +133,14 @@ class LaunchGameHandler: ObservableObject {
             config.disablePTC = true
             config.resscale = 1.0
         }
+        
+        if ShaderWarmupManager.shared.shouldWarmup(titleId: currentGame.titleId) {
+            ShaderWarmupManager.shared.warmupShaderCache(titleId: currentGame.titleId)
+        }
+        
+        AutoPerformanceGovernor.shared.startMonitoring(for: currentGame.titleId)
+        ThermalGovernor.shared.startMonitoring()
+        
         config.gamepath = currentGame.fileURL.path
         config.inputids = Array(Set(controllerManager.selectedControllers))
         
@@ -146,6 +155,9 @@ class LaunchGameHandler: ObservableObject {
             try ryujinx.start(with: config)
         } catch {
             isStartingGame = false
+            let diagnostic = CrashDiagnostic.analyzeCrash(errorMessage: error.localizedDescription, errorType: nil)
+            print("[CrashDiagnostic] \(diagnostic.category): \(diagnostic.description)")
+            ryujinx.lastCrashDiagnostic = diagnostic
             print("Failed to start game '\(currentGame.titleId)': \(error)")
         }
     }

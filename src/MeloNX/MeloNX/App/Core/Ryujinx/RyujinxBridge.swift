@@ -95,6 +95,10 @@ final class RyujinxBridge {
             SN_set_game_volume(newValue)
         }
     }
+    
+    static func updateGovernorSettings(resScale: Double, maxAnisotropy: Float, disablePTC: Bool) {
+        SN_update_governor_settings(resScale, maxAnisotropy, disablePTC)
+    }
 
 
     static func touchBegan(x: Float, y: Float, index: Int) {
@@ -275,4 +279,7 @@ func SN_set_gamepad_motion_axis(_ idPtr: UnsafeMutableRawPointer?, _ motionType:
 func SN_free_game_info(_ gameInfo: GameInfo)
 
 @_silgen_name("free_firmware_version")
-func SN_free_firmware_version(_ gameInfo: UnsafeMutablePointer<CChar>!)
+func SN_free_firmware_version(_ ptr: UnsafeMutablePointer<CChar>!)
+
+@_silgen_name("update_governor_settings")
+func SN_update_governor_settings(_ resScale: Double, _ maxAnisotropy: Float, _ disablePTC: Bool)

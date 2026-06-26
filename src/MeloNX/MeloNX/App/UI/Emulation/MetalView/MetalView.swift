@@ -10,14 +10,25 @@ import MetalKit
 import Metal
 
 struct MetalView: UIViewRepresentable {
-    var airplay: Bool = Air.shared.connected // just in case :3
+    var airplay: Bool = Air.shared.connected
+    @ObservedObject private var thermalGovernor = ThermalGovernor.shared
     
     func makeUIView(context: Context) -> UIView {
         return Self.createView()
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        // nothin
+        if let view = uiView as? MeloMTKView {
+            let fpsCap = thermalGovernor.currentFPSPace
+            switch fpsCap {
+            case .fps30:
+                view.preferredFramesPerSecond = 30
+            case .fps60:
+                view.preferredFramesPerSecond = 60
+            case .unlimited:
+                view.preferredFramesPerSecond = 0
+            }
+        }
     }
     
     @discardableResult

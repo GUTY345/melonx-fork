@@ -32,6 +32,7 @@ class Ryujinx : ObservableObject {
     @Published var showLoading = true
     @Published var jitenabled = false
     @Published var isPortrait = false
+    @Published var lastCrashDiagnostic: CrashDiagnostic?
     
     // LDN and Firmware
     @AppStorage("LDN_MITM") var ldn = printAllIPv4Addresses().first ?? "Unknown"

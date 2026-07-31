@@ -1,0 +1,10 @@
+//
+//  MeloNX.xcconfig
+//  MeloNX
+//
+
+VERSION = 1.0.2
+
+DEVELOPMENT_TEAM = 4HX756P7TJ
+CODE_SIGN_STYLE = Automatic
+PRODUCT_BUNDLE_IDENTIFIER = com.mathachai.melonx
